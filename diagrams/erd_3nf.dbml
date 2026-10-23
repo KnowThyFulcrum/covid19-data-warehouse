@@ -1,0 +1,118 @@
+// COVID-19 Normalized Database Model (3NF+ Snowflake style)
+// Paste this entire block into dbdiagram.io
+
+Table Dim_Date {
+  date_id int [pk, increment]
+  date date [unique, not null]
+  year int
+  month int
+  day int
+  month_name varchar(20)
+  quarter int
+  day_of_week int
+  is_weekend boolean
+  Note "Unique calendar table"
+}
+
+Table Dim_Location {
+  location_id int [pk, increment]
+  country varchar(100) [not null]
+  continent varchar(50)
+  iso_code char(3)
+  population bigint
+  population_density decimal(10,3)
+  median_age decimal(4,2)
+  aged_65_older decimal(6,3)
+  aged_70_older decimal(6,3)
+  gdp_per_capita decimal(12,2)
+  life_expectancy decimal(4,2)
+  human_development_index decimal(4,3)
+  Note "Slowly changing country attributes"
+}
+
+Table Dim_Death {
+  death_id bigint [pk, increment]
+  total_deaths int
+  total_deaths_per_million decimal(12,4)
+  new_deaths int
+  new_deaths_per_million decimal(10,4)
+  new_deaths_smoothed decimal(10,4)
+  new_deaths_smoothed_per_million decimal(10,4)
+  excess_mortality_cumulative_absolute decimal(15,2)
+  excess_mortality_cumulative decimal(10,4)
+  excess_mortality decimal(10,4)
+  excess_mortality_cumulative_per_million decimal(12,4)
+}
+
+Table Dim_HospitalPatient {
+  patient_id bigint [pk, increment]
+  hospital_patients int
+  hospital_patients_per_million decimal(12,4)
+  icu_patients int
+  icu_patients_per_million decimal(12,4)
+}
+
+Table Dim_Case {
+  case_id bigint [pk, increment]
+  total_cases bigint
+  total_cases_per_million decimal(15,4)
+  new_cases int
+  new_cases_per_million decimal(12,4)
+  new_cases_smoothed decimal(12,4)
+  new_cases_smoothed_per_million decimal(12,4)
+}
+
+Table Dim_Vaccination {
+  vaccinated_id bigint [pk, increment]
+  total_vaccinations bigint
+  people_vaccinated bigint
+  people_fully_vaccinated bigint
+  total_boosters bigint
+  new_vaccinations int
+  new_vaccinations_smoothed int
+  total_vaccinations_per_hundred decimal(8,4)
+  people_vaccinated_per_hundred decimal(8,4)
+  people_fully_vaccinated_per_hundred decimal(8,4)
+  total_boosters_per_hundred decimal(8,4)
+  new_people_vaccinated_smoothed int
+  new_people_vaccinated_smoothed_per_hundred decimal(8,4)
+}
+
+Table Dim_Test {
+  test_id bigint [pk, increment]
+  total_tests bigint
+  total_tests_per_thousand decimal(12,4)
+  new_tests int
+  new_tests_per_thousand decimal(10,4)
+  new_tests_smoothed int
+  new_tests_smoothed_per_thousand decimal(10,4)
+  tests_per_case decimal(12,4)
+  positive_rate decimal(8,4)
+}
+
+Table Fact_Daily_COVID {
+  daily_id bigint [pk, increment]
+  date_id int [ref: > Dim_Date.date_id]
+  location_id int [ref: > Dim_Location.location_id]
+  
+  // Optional foreign keys to dimension tables (nullable if no data that day)
+  death_id bigint [ref: > Dim_Death.death_id, null]
+  patient_id bigint [ref: > Dim_HospitalPatient.patient_id, null]
+  case_id bigint [ref: > Dim_Case.case_id, null]
+  vaccinated_id bigint [ref: > Dim_Vaccination.vaccinated_id, null]
+  test_id bigint [ref: > Dim_Test.test_id, null]
+  
+  // Additional fact-level metrics that don't belong to any dimension
+  reproduction_rate decimal(6,4)
+  stringency_index decimal(6,4)
+  
+  Indexes {
+    (date_id, location_id) [unique]
+    date_id
+    location_id
+  }
+}
+
+// Relationships visualization helpers (dbdiagram.io understands these)
+// Ref: Dim_Location.location_id < Fact_Daily_COVID.location_id
+// Ref: Dim_Date.date_id < Fact_Daily_COVID.date_id
