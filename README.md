@@ -12,7 +12,7 @@ Azure SQL Database · T-SQL · Dimensional modeling (Kimball) · dbdiagram.io
 - Designed a normalized 3NF model (`diagrams/erd_3nf.dbml`) and the final **star schema**: `Fact_Daily_COVID` plus 7 dimensions: `Dim_Date`, `Dim_Location`, `Dim_Case`, `Dim_Death`, `Dim_HospitalPatient`, `Dim_Vaccination`, `Dim_Test`.
 - ETL: loaded data into staging, built the dimensions, then did the final fact load with `GROUP BY (date_id, location_id)` and `MAX(surrogate_key)` to remove duplicate (country, date) rows and avoid UNIQUE-constraint violations (TRUNCATE + GROUP BY + MAX pattern).
 
-## Results (from the documentation)
+## Results
 - Final model: **exactly 50,000 fact rows with 100% referential integrity**.
 - Supports complex analytical queries across cases, deaths, testing, vaccination rollout, excess mortality, and reproduction rate, with sub-second response on simple star-schema joins.
 
